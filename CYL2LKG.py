@@ -23,12 +23,32 @@ offset_focusplane=0
 step_size = step_size*camera_distance/100
 
 
+#######################
+# clean up pov files from CYLview
+#set resolution to LKG portrait
+#set FOV angle, test this on one
+new_angle = 5
+
+for filename in os.listdir('.'):
+    if filename.endswith('.pov'):
+        with open(filename, 'r') as f:
+            lines = f.readlines()
+        with open(filename, 'w') as f:
+            for line in lines:
+                if line.startswith('  angle'):
+                    f.write(f'  angle {new_angle}\n')
+                elif line.startswith('  right x*'):
+                    f.write(f'  right x*420/560\n  look_at <0, 0, 0>\n')
+                else:
+                    f.write(line)
+
+
 #CREATE POV INPUT FILES
 #########################
 
 # Iterate over POV-Ray files
 for file_name in os.listdir('.'):
-    if file_name.endswith('.pov') and file_name.startswith('frame_'):
+    if file_name.endswith('.pov') and file_name.startswith('FRAME'):
         # Create a directory for output files
         out_dir = file_name[:-4]
         os.makedirs(out_dir, exist_ok=True)
@@ -75,7 +95,7 @@ for file_name in os.listdir('.'):
 
 #RENDER
 #########################
-command = 'find . -maxdepth 1 -type d -name "frame_*" -exec sh -c \'cd "{}" && for i in *.pov; do povray $i +W420 +H560 -d +Q11 +A; done\' \\;'
+command = 'find . -maxdepth 1 -type d -name "FRAME*" -exec sh -c \'cd "{}" && for i in *.pov; do povray $i +W420 +H560 -d +Q11 +A; done\' \\;'
 subprocess.run(command, shell=True)
 
 #MAKE QUILTS
@@ -93,7 +113,7 @@ total_height = num_rows * img_height
 
 # Iterate over frame directories
 for dir_name in os.listdir('.'):
-    if dir_name.startswith('frame_') and os.path.isdir(dir_name):
+    if dir_name.startswith('FRAME') and os.path.isdir(dir_name):
         # Create new image and iterate over individual images
         quilt_img = Image.new('RGB', (total_width, total_height))
         for i in range(48):
@@ -118,5 +138,5 @@ png_files = [f for f in os.listdir() if f.endswith('.png')]
 # Only execute ffmpeg command if there is more than one PNG file
 if len(png_files) > 1:
     # Execute ffmpeg command
-    command = f"ffmpeg -r 30 -f image2 -s 3060x3060 -i quilt_frame_f%03d_qs8x6a0.75.png -vcodec libx265 -crf 20 -pix_fmt yuv420p animation_qs8x6a0.75.mp4"
+    command = f"ffmpeg -r 30 -f image2 -s 3060x3060 -i quilt_FRAME%04d_qs8x6a0.75.png -vcodec libx265 -crf 20 -pix_fmt yuv420p animation_qs8x6a0.75.mp4"
     os.system(command)
